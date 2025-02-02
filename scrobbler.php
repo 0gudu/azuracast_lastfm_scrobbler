@@ -5,9 +5,7 @@ $dbuser = 'root';
 $dbpass = 'nova_senha';
 
 try {
-    $pdo = new PDO('mysql:host=' . $host . ';dbname=' . $dbname . ';charset=utf8', $dbuser, $dbpass, [
-        PDO::MYSQL_ATTR_LOCAL_INFILE => true
-    ]);
+    $pdo = new PDO('mysql:host=' . $host . ';dbname=' . $dbname . ';charset=utf8', $dbuser, $dbpass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     echo "Erro na conexão: " . $e->getMessage();
@@ -65,11 +63,9 @@ function checkAndUpdateStatus($id, $pdo) {
 
 // Função para realizar scrobble se o cliente estiver online
 function scrobbleIfOnline($id, $artist_name, $song_title, $pdo) {
-    // Verifica o status do cliente
     $status = checkAndUpdateStatus($id, $pdo);
 
     if ($status === 'online') {
-        // Obter sessionKey e outras informações do cliente
         $sql = "SELECT * FROM acessos WHERE uniqueidclient = :id";
         $comando = $pdo->prepare($sql);
         $comando->bindParam(':id', $id, PDO::PARAM_STR);
@@ -85,12 +81,10 @@ function scrobbleIfOnline($id, $artist_name, $song_title, $pdo) {
             die("Chave de API ou segredo não configurados corretamente.");
         }
 
-        $timestamp = time(); // Tempo UNIX da execução
+        $timestamp = time(); 
 
-        // Calcula a assinatura para o scrobble
         $apiSig = md5("api_key" . $apiKey . "artist" . $artist_name . "methodtrack.scrobble" . "sk" . $sessionkey . "timestamp" . $timestamp . "track" . $track . $secret);
 
-        // Dados da requisição
         $data = [
             "method" => "track.scrobble",
             "api_key" => $apiKey,
@@ -102,7 +96,6 @@ function scrobbleIfOnline($id, $artist_name, $song_title, $pdo) {
             "format" => "json"
         ];
 
-        // Configurações da requisição
         $options = [
             "http" => [
                 "header" => "Content-Type: application/x-www-form-urlencoded",
@@ -111,7 +104,6 @@ function scrobbleIfOnline($id, $artist_name, $song_title, $pdo) {
             ]
         ];
 
-        // Usando cURL para a requisição
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'http://ws.audioscrobbler.com/2.0/');
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -130,7 +122,7 @@ function scrobbleIfOnline($id, $artist_name, $song_title, $pdo) {
     }
 }
 
-// Chama a função de scrobble para as duas contas (gudu e soja)
+// Chama a função de scrobble para as duas contas
 scrobbleIfOnline('gudu', $artist_name, $song_title, $pdo);
 scrobbleIfOnline('soja', $artist_name, $song_title, $pdo);
 
